@@ -1,0 +1,11 @@
+This program is SuVeTMA, a collection of support vector tools for microarray analysis.
+
+The tools use two types of data as input:
+
+* Regulatory network models. These can be created as follows:
+
+1) BaSeTraM is run using the TRANSFAC database and the human genome. This will generate a list of locations in the genome of the putative transcription factor binding sites.
+
+2) TFNetBuilder is run over the BaSeTraM output to associate the transcription factor binding sites to particular genes.
+
+* Microarray data to test the regulatory model against. To get this, download a platform in SOFT format, and then use the soft2matrix format to convert it into the on-disk data-structure used by SuVeTMA.
