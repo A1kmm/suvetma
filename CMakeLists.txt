@@ -1,0 +1,2 @@
+ADD_EXECUTABLE(TrainSVMs TrainSVMs.cpp SVMSupport.cpp)
+TARGET_LINK_LIBRARIES(TrainSVMs boost_filesystem boost_program_options boost_regex svm)
