@@ -86,11 +86,12 @@ main(int argc, char** argv)
   }
 
   ExpressionMatrixProcessor emp(matrixdir);
-  GRNModel m(model, emp);
+  GRNModel m(model, emp, 50);
 
   std::list<std::string> trainingArrays;
   m.loadArraySet(trainingset, trainingArrays);
-  m.trainSVMs(trainingArrays);
+  m.loadSVMTrainingData(trainingArrays);
+  m.trainSVMs();
   m.saveSVMs(svmdir);
   
   return 0;

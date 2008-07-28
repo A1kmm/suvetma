@@ -111,7 +111,7 @@ SupportVectorMachine::SupportVectorMachine
 )
   : mEMP(aEMP), mRegulatedGene(aEMP.getIndexOfGene(aRegulatedGene)),
     mNumRegulators(aNumRegulators), mModel(NULL), mGamma(0.1), mC(0.1),
-    mp(0.1), mRegulatedGeneName(aRegulatedGene)
+    mp(0.1), mTestNodes(NULL), mRegulatedGeneName(aRegulatedGene)
 {
   mRegulatingGenes.reserve(aNumRegulators);
   mProblem.y = NULL;
@@ -132,6 +132,11 @@ SupportVectorMachine::~SupportVectorMachine()
       delete [] mProblem.x[0];
     delete [] mProblem.x;
   }
+
+  if (mTestNodes)
+  {
+    delete mTestNodes;
+  }
 }
 
 void
@@ -148,13 +153,15 @@ SupportVectorMachine::setupProblem(uint32_t aSize)
   if (mNumRegulators == 0)
   {
     mNumFinite = 0;
-    mAverage = 0.0;
+    mSum = 0.0;
     return;
   }
 
   mProblem.l = 0;
   mProblem.y = new double[aSize];
   mProblem.x = new svm_node*[aSize];
+
+  mTestNodes = new svm_node[mNumRegulators + 1];
 
   double* yp = mProblem.y;
   svm_node** xp = mProblem.x;
@@ -180,7 +187,7 @@ SupportVectorMachine::loadTrainingRow()
       return;
     
     mNumFinite++;
-    mAverage += rgl;
+    mSum += rgl;
 
     return;
   }
@@ -205,7 +212,7 @@ SupportVectorMachine::loadTrainingRow()
   svm_node* p;
   p = *mXp++;
 
-  uint32_t k = 0;
+  uint32_t k = 1;
   for (std::vector<uint32_t>::iterator j = mRegulatingGenes.begin();
        j != mRegulatingGenes.end(); p++, j++, k++)
   {
@@ -222,17 +229,25 @@ SupportVectorMachine::train()
   // mNumRegulators > 0 later...
   if (mNumRegulators == 0)
   {
-    mAverage /= mNumFinite;
+    mAverage = mSum / mNumFinite;
     return;
   }
 
   mParameter.svm_type = EPSILON_SVR;
   mParameter.kernel_type = RBF;
+  mParameter.degree = 3;
   mParameter.gamma = mGamma;
+  mParameter.coef0 = 0;
+  mParameter.nu = 0.5;
+  mParameter.cache_size = 100;
   mParameter.C = mC;
+  mParameter.eps = 1E-3;
   mParameter.p = mp;
   mParameter.shrinking = 1;
   mParameter.probability = 0;
+  mParameter.nr_weight = 0;
+  mParameter.weight_label = NULL;
+  mParameter.weight = NULL;
 
   if (mModel != NULL)
     svm_destroy_model(mModel);
@@ -255,11 +270,44 @@ SupportVectorMachine::load(const std::string& aFilename)
   mModel = svm_load_model(aFilename.c_str());
 }
 
+double
+SupportVectorMachine::testOnRow()
+{
+  // We just ignore the whole array if there are NaNs...
+  svm_node* p = mTestNodes;
+  uint32_t k = 1;
+  for (std::vector<uint32_t>::iterator j = mRegulatingGenes.begin();
+       j != mRegulatingGenes.end(); j++)
+  {
+    double v(mEMP.getDataPoint(*j));
+    if (!isfinite(v))
+      return std::numeric_limits<double>::quiet_NaN();
+    else
+    {
+      p->index = k++;
+      p->value = v;
+      p++;
+    }
+  }
+
+  p->index = -1;
+
+  double answer = mEMP.getDataPoint(mRegulatedGene);
+  if (!isfinite(answer))
+    return std::numeric_limits<double>::quiet_NaN();
+
+  double x = (svm_predict(mModel, mTestNodes) - answer);
+  return x * x;
+}
+
 GRNModel::GRNModel(const std::string& aModel,
-                   ExpressionMatrixProcessor& aEMP)
+                   ExpressionMatrixProcessor& aEMP,
+                   uint32_t aGeneLimit)
   : mEMP(aEMP)
 {
   std::ifstream m(aModel.c_str());
+
+  bool unlimitedGenes = (aGeneLimit == 0);
 
   std::string l;
   std::getline(m, l);
@@ -288,7 +336,7 @@ GRNModel::GRNModel(const std::string& aModel,
 
   const static boost::regex edgeline("EDGES ([0-9]+) \\((.*)\\)");
 
-  while (m.good())
+  while (m.good() && (unlimitedGenes || aGeneLimit-- > 0))
   {
     std::getline(m, l);
     boost::smatch res;

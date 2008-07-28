@@ -1,2 +1,6 @@
+cmake_minimum_required(VERSION 2.6)
 ADD_EXECUTABLE(TrainSVMs TrainSVMs.cpp SVMSupport.cpp)
+ADD_EXECUTABLE(FindOptimalSVMParameters FindOptimalSVMParameters.cpp SVMSupport.cpp)
+# ADD_INCLUDE()
 TARGET_LINK_LIBRARIES(TrainSVMs boost_filesystem boost_program_options boost_regex svm)
+TARGET_LINK_LIBRARIES(FindOptimalSVMParameters boost_filesystem boost_program_options boost_regex svm eo eoutils)

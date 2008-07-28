@@ -5,6 +5,7 @@
 #include <list>
 #include <svm.h>
 #include <fstream>
+#include <math.h>
 
 class ExpressionMatrixProcessor
 {
@@ -38,12 +39,21 @@ public:
   void loadTrainingRow();
 
   void train();
+  double testOnRow();
   void save(const std::string& aFilename);
   void load(const std::string& aFilename);
 
   const std::string& getRegulatedGeneName()
   {
     return mRegulatedGeneName;
+  }
+
+  void
+  setParameters(double aGamma, double aC, double ap)
+  {
+    mGamma = aGamma;
+    mC = aC;
+    mp = ap;
   }
 
 private:
@@ -53,10 +63,10 @@ private:
   struct svm_model* mModel;
   struct svm_problem mProblem;
   struct svm_parameter mParameter;
-  double mAverage, mGamma, mC, mp;
+  double mAverage, mSum, mGamma, mC, mp;
   uint32_t mNumFinite;
   double * mYp;
-  svm_node ** mXp;
+  svm_node ** mXp, *mTestNodes;
   std::string mRegulatedGeneName;
 };
 
@@ -64,10 +74,11 @@ class GRNModel
 {
 public:
   GRNModel(const std::string& aModel,
-           ExpressionMatrixProcessor& aEMP);
+           ExpressionMatrixProcessor& aEMP,
+           uint32_t aGeneLimit = 0);
   ~GRNModel();
 
-  template<class Container> void trainSVMs(const Container& aTrainingArrays)
+  template<class Container> void loadSVMTrainingData(const Container& aTrainingArrays)
   {
     uint32_t nTraining(aTrainingArrays.size());
 
@@ -87,11 +98,45 @@ public:
            j++)
         (*j)->loadTrainingRow();
     }
+  }
 
+  void setSVMParameters(double aGamma, double aC, double ap)
+  {
+    for (std::list<SupportVectorMachine*>::iterator i = mSVMs.begin();
+         i != mSVMs.end();
+         i++)
+      (*i)->setParameters(aGamma, aC, ap);
+  }
+
+  void trainSVMs()
+  {
     for (std::list<SupportVectorMachine*>::iterator i = mSVMs.begin();
          i != mSVMs.end();
          i++)
       (*i)->train();
+  }
+
+  template<class Container> double testSVMs(const Container& aTestingArrays)
+  {
+    double testScore = 0.0;
+
+    for (typename Container::const_iterator i = aTestingArrays.begin();
+         i != aTestingArrays.end();
+         i++)
+    {
+      mEMP.setArray(mEMP.getIndexOfArray(*i));
+      
+      for (std::list<SupportVectorMachine*>::iterator j = mSVMs.begin();
+           j != mSVMs.end();
+           j++)
+      {
+        double r((*j)->testOnRow());
+        if (isfinite(r))
+          testScore += r;
+      }
+    }
+
+    return testScore;
   }
 
   void saveSVMs(const std::string& aSVMDir);
