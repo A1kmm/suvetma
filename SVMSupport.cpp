@@ -116,6 +116,8 @@ SupportVectorMachine::SupportVectorMachine
   mRegulatingGenes.reserve(aNumRegulators);
   mProblem.y = NULL;
   mProblem.x = NULL;
+
+  mTestNodes = new svm_node[mNumRegulators + 1];
 }
 
 SupportVectorMachine::~SupportVectorMachine()
@@ -160,8 +162,6 @@ SupportVectorMachine::setupProblem(uint32_t aSize)
   mProblem.l = 0;
   mProblem.y = new double[aSize];
   mProblem.x = new svm_node*[aSize];
-
-  mTestNodes = new svm_node[mNumRegulators + 1];
 
   double* yp = mProblem.y;
   svm_node** xp = mProblem.x;
@@ -268,6 +268,8 @@ SupportVectorMachine::load(const std::string& aFilename)
     svm_destroy_model(mModel);
 
   mModel = svm_load_model(aFilename.c_str());
+
+  assert(mModel);
 }
 
 double
@@ -343,8 +345,8 @@ GRNModel::GRNModel(const std::string& aModel,
     if (!boost::regex_match(l, res, edgeline))
       continue;
 
-    std::string targGene(
-                         (mHGNCByVertex[strtoul(res[1].str().c_str(), NULL, 10)]));
+    uint32_t g(strtoul(res[1].str().c_str(), NULL, 10));
+    std::string targGene(mHGNCByVertex[g]);
 
     typedef boost::tokenizer<boost::char_separator<char> > tokenizer;
     boost::char_separator<char> sep(" ");
@@ -359,6 +361,9 @@ GRNModel::GRNModel(const std::string& aModel,
                            (mHGNCByVertex[strtoul(g.c_str(), NULL, 10)]));
     }
     
+    if (targGene == "")
+      continue;
+
     SupportVectorMachine* svm(new SupportVectorMachine(aEMP, targGene,
                                                        regulators.size()));
     for (std::vector<uint32_t>::iterator i = regulators.begin();

@@ -10,8 +10,7 @@ int
 main(int argc, char** argv)
 {
   po::options_description desc;
-  std::string matrixdir, model, svmdir, trainingset;
-  double loggamma, logC, logp;
+  std::string matrixdir, model, svmdir, testingset, output;
 
   desc.add_options()
     ("matrixdir", po::value<std::string>(&matrixdir),
@@ -20,14 +19,11 @@ main(int argc, char** argv)
      "The gene regulatory network model")
     ("svmdir", po::value<std::string>(&svmdir),
      "The directory containing the support vector machines")
-    ("trainingset", po::value<std::string>(&trainingset),
-     "The list of arrays which have been selected for inclusion in the training set")
-    ("gamma", po::value<double>(&loggamma),
-     "The value of the RBF parameter gamma, as a base-e logarithm of the value")
-    ("C", po::value<double>(&logC),
-     "The value of the SVM parameter C, as a base-e logarithm of the value")
-    ("p", po::value<double>(&logp),
-     "The value of the RBF parameter p, as a base-e logarithm of the value")
+    ("testingset", po::value<std::string>(&testingset),
+     "The list of arrays which have been selected for inclusion in the "
+     "testing set")
+    ("output", po::value<std::string>(&output),
+     "The file to write the per-array data into")
     ;
 
   po::variables_map vm;
@@ -44,8 +40,8 @@ main(int argc, char** argv)
       wrong = "model";
     else if (!vm.count("svmdir"))
       wrong = "svmdir";
-    else if (!vm.count("trainingset"))
-      wrong = "trainingset";
+    else if (!vm.count("testingset"))
+      wrong = "testingset";
   }
 
   if (wrong != "")
@@ -72,35 +68,35 @@ main(int argc, char** argv)
 
   if (!fs::is_directory(svmdir))
   {
-    fs::path p(svmdir);
-    try
-    {
-      fs::create_directory(p);
-    }
-    catch (std::exception e)
-    {
-      std::cout << "SVM directory doesn't exist and couldn't be created: "
-                << e.what() << std::endl;
-      return 1;
-    }
+    std::cout << "SVM directory doesn't exist."
+              << std::endl;
+    return 1;
   }
 
-  if (!fs::is_regular(trainingset))
+  if (!fs::is_regular(testingset))
   {
-    std::cout << "Training set file doesn't exist or not regular file."
+    std::cout << "Testing set file doesn't exist or not regular file."
               << std::endl;
     return 1;
   }
 
   ExpressionMatrixProcessor emp(matrixdir);
   GRNModel m(model, emp);
+  m.loadSVMs(svmdir);
 
-  std::list<std::string> trainingArrays;
-  m.loadArraySet(trainingset, trainingArrays);
-  m.setSVMParameters(exp(loggamma), exp(logC), exp(logp));
-  m.loadSVMTrainingData(trainingArrays);
-  m.trainSVMs();
-  m.saveSVMs(svmdir);
+  std::list<std::string> testingSet;
+  m.loadArraySet(testingset, testingSet);
   
-  return 0;
+  std::vector<std::pair<double, uint32_t> > results;
+  m.testSVMs(testingSet, results);
+
+  std::ofstream ofile(output.c_str());
+
+  std::vector<std::pair<double, uint32_t> >::iterator i;
+  std::list<std::string>::iterator j;
+  for (i = results.begin(), j = testingSet.begin();
+       i != results.end();
+       i++, j++)
+    ofile << *j << "\t" << (*i).first << "\t" << (*i).second
+          << std::endl;
 }

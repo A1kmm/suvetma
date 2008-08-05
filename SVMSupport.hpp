@@ -139,6 +139,35 @@ public:
     return testScore;
   }
 
+  template<class Container1, class Container2>
+  void testSVMs(const Container1& aTestingArrays,
+                Container2& aResults)
+  {
+    for (typename Container1::const_iterator i = aTestingArrays.begin();
+         i != aTestingArrays.end();
+         i++)
+    {
+      mEMP.setArray(mEMP.getIndexOfArray(*i));
+      
+      double arraySum = 0.0;
+      uint32_t arrayCount = 0;
+
+      for (std::list<SupportVectorMachine*>::iterator j = mSVMs.begin();
+           j != mSVMs.end();
+           j++)
+      {
+        double r((*j)->testOnRow());
+        if (isfinite(r))
+        {
+          arraySum += r;
+          arrayCount++;
+        }
+      }
+
+      aResults.push_back(std::pair<double, uint32_t>(arraySum, arrayCount));
+    }
+  }
+
   void saveSVMs(const std::string& aSVMDir);
   void loadSVMs(const std::string& aSVMDir);
 
@@ -152,10 +181,10 @@ public:
       std::string l;
       std::getline(s, l);
       
-      aArrays.push_back(l);
+      if (l != "")
+        aArrays.push_back(l);
     }
   }
-
 
 private:
   ExpressionMatrixProcessor& mEMP;
