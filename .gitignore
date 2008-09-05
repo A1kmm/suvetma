@@ -1,0 +1,12 @@
+*.[oa]
+*~
+CMakeCache.txt
+CMakeFiles
+Makefile
+TrainSVMs
+cmake_install.cmake
+GetAverageGeneExpression
+FindOptimalSVMParameters
+TestSVMs
+SignTestFits
+*results*.txt
