@@ -6,6 +6,44 @@
 namespace po = boost::program_options;
 namespace fs = boost::filesystem;
 
+class ResultSaver
+{
+public:
+  ResultSaver(uint32_t nGenes, const std::string& aFile)
+    : mnGenes(nGenes)
+  {
+    mData = new double[nGenes];
+    mOutput = fopen(aFile.c_str(), "w");
+  }
+
+  ~ResultSaver()
+  {
+    delete [] mData;
+    fclose(mOutput);
+  }
+
+  void startRow(uint32_t aArray)
+  {
+    for (uint32_t i = 0; i < mnGenes; i++)
+      mData[i] = std::numeric_limits<double>::quiet_NaN();
+  }
+
+  void result(uint32_t aGene, double aResult)
+  {
+    mData[aGene] = aResult;
+  }
+
+  void endRow(uint32_t aArray)
+  {
+    fwrite(mData, mnGenes * sizeof(double), 1, mOutput);
+  }
+
+private:
+  double* mData;
+  FILE* mOutput;
+  uint32_t mnGenes;
+};
+
 int
 main(int argc, char** argv)
 {
@@ -42,6 +80,8 @@ main(int argc, char** argv)
       wrong = "svmdir";
     else if (!vm.count("testingset"))
       wrong = "testingset";
+    else if (!vm.count("output"))
+      wrong = "output";
   }
 
   if (wrong != "")
@@ -82,21 +122,11 @@ main(int argc, char** argv)
 
   ExpressionMatrixProcessor emp(matrixdir);
   GRNModel m(model, emp);
+  ResultSaver rs(emp.getNumGenes(), output);
   m.loadSVMs(svmdir);
 
   std::list<std::string> testingSet;
   m.loadArraySet(testingset, testingSet);
   
-  std::vector<std::pair<double, uint32_t> > results;
-  m.testSVMs(testingSet, results);
-
-  std::ofstream ofile(output.c_str());
-
-  std::vector<std::pair<double, uint32_t> >::iterator i;
-  std::list<std::string>::iterator j;
-  for (i = results.begin(), j = testingSet.begin();
-       i != results.end();
-       i++, j++)
-    ofile << *j << "\t" << (*i).first << "\t" << (*i).second
-          << std::endl;
+  m.testSVMs(testingSet, rs);
 }

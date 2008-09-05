@@ -17,6 +17,7 @@ public:
   uint32_t getIndexOfArray(const std::string& aArray);
   void setArray(uint32_t aArray);
   double getDataPoint(uint32_t aGene);
+  uint32_t getNumGenes() const { return mnGenes; }
 
 private:
   std::map<std::string, uint32_t> mArrayIndices, mGeneIndices;
@@ -46,6 +47,11 @@ public:
   const std::string& getRegulatedGeneName()
   {
     return mRegulatedGeneName;
+  }
+
+  uint32_t getRegulatedGene()
+  {
+    return mRegulatedGene;
   }
 
   void
@@ -116,6 +122,8 @@ public:
       (*i)->train();
   }
 
+  void trainAndSaveSVMs(const std::string& aSVMDir);
+
   template<class Container> double testSVMs(const Container& aTestingArrays)
   {
     double testScore = 0.0;
@@ -139,32 +147,28 @@ public:
     return testScore;
   }
 
-  template<class Container1, class Container2>
-  void testSVMs(const Container1& aTestingArrays,
-                Container2& aResults)
+  template<class Container, class Listener>
+  void testSVMs(const Container& aTestingArrays,
+                Listener& aResults)
   {
-    for (typename Container1::const_iterator i = aTestingArrays.begin();
+    for (typename Container::const_iterator i = aTestingArrays.begin();
          i != aTestingArrays.end();
          i++)
     {
-      mEMP.setArray(mEMP.getIndexOfArray(*i));
-      
+      uint32_t idx = mEMP.getIndexOfArray(*i);
+      mEMP.setArray(idx);
+      aResults.startRow(idx);
+
       double arraySum = 0.0;
       uint32_t arrayCount = 0;
 
       for (std::list<SupportVectorMachine*>::iterator j = mSVMs.begin();
            j != mSVMs.end();
            j++)
-      {
-        double r((*j)->testOnRow());
-        if (isfinite(r))
-        {
-          arraySum += r;
-          arrayCount++;
-        }
-      }
+        aResults.result((*j)->getRegulatedGene(),
+                        (*j)->testOnRow());
 
-      aResults.push_back(std::pair<double, uint32_t>(arraySum, arrayCount));
+      aResults.endRow(idx);
     }
   }
 

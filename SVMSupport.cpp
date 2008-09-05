@@ -256,6 +256,22 @@ SupportVectorMachine::train()
 }
 
 void
+GRNModel::trainAndSaveSVMs(const std::string& aSVMDir)
+{
+  fs::path dir(aSVMDir);
+  
+  for (std::list<SupportVectorMachine*>::iterator i = mSVMs.begin();
+       i != mSVMs.end();
+       i++)
+  {
+    (*i)->train();
+    fs::path targ(dir);
+    targ /= (*i)->getRegulatedGeneName();
+    (*i)->save(targ.string());
+  }
+}
+
+void
 SupportVectorMachine::save(const std::string& aFilename)
 {
   svm_save_model(aFilename.c_str(), mModel);

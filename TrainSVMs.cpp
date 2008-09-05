@@ -99,8 +99,7 @@ main(int argc, char** argv)
   m.loadArraySet(trainingset, trainingArrays);
   m.setSVMParameters(exp(loggamma), exp(logC), exp(logp));
   m.loadSVMTrainingData(trainingArrays);
-  m.trainSVMs();
-  m.saveSVMs(svmdir);
+  m.trainAndSaveSVMs(svmdir);
   
   return 0;
 }
