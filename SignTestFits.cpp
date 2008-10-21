@@ -48,7 +48,10 @@ public:
     do
     {
       mBufferUtilisation = fread(mBuffer1, sizeof(double), kBufferSize, mfControl);
-      fread(mBuffer2, sizeof(double), mBufferUtilisation, mfModel);
+      if (fread(mBuffer2, sizeof(double), mBufferUtilisation, mfModel) != mBufferUtilisation)
+      {
+        std::cerr << "Warning: read mismatch" << std::endl;
+      }
       updateSignStatistics();
     }
     while (mBufferUtilisation == kBufferSize);
@@ -57,15 +60,16 @@ public:
 private:
   FILE * mfControl, * mfModel;
   double * mBuffer1, * mBuffer2;
-  static const uint32_t kBufferSize = 512;
-  uint32_t mBufferUtilisation, mnGreater, mnTotal;
+  static const uint32_t kBufferSize = 512000;
+  uint32_t mBufferUtilisation;
+  uint32_t mnGreater, mnTotal;
 
   void
   updateSignStatistics()
   {
-    for (uint32_t i = 0; i < kBufferSize; i++)
+    for (uint32_t i = 0; i < mBufferUtilisation; i++)
     {
-      if (finite(mBuffer1[i]) && finite(mBuffer2[i]))
+      if (isfinite(mBuffer1[i]) && isfinite(mBuffer2[i]) && mBuffer1[i] != mBuffer2[i])
       {
         mnGreater += (mBuffer1[i] >= mBuffer2[i]);
         mnTotal++;
