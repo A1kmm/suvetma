@@ -12,6 +12,7 @@ main(int argc, char** argv)
   po::options_description desc;
   std::string matrixdir, model, svmdir, trainingset;
   double loggamma, logC, logp;
+  bool dontReplace;
 
   desc.add_options()
     ("matrixdir", po::value<std::string>(&matrixdir),
@@ -28,6 +29,7 @@ main(int argc, char** argv)
      "The value of the SVM parameter C, as a base-e logarithm of the value")
     ("p", po::value<double>(&logp),
      "The value of the RBF parameter p, as a base-e logarithm of the value")
+    ("dont-replace", "Indicates that existing SVMs shouldn't be replaced")
     ;
 
   po::variables_map vm;
@@ -47,6 +49,8 @@ main(int argc, char** argv)
     else if (!vm.count("trainingset"))
       wrong = "trainingset";
   }
+
+  dontReplace = (vm.count("dont-replace") != 0);
 
   if (wrong != "")
     std::cerr << "Missing option: " << wrong << std::endl;
@@ -99,7 +103,7 @@ main(int argc, char** argv)
   m.loadArraySet(trainingset, trainingArrays);
   m.setSVMParameters(exp(loggamma), exp(logC), exp(logp));
   m.loadSVMTrainingData(trainingArrays);
-  m.trainAndSaveSVMs(svmdir);
+  m.trainAndSaveSVMs(svmdir, dontReplace);
   
   return 0;
 }
