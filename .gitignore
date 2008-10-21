@@ -10,3 +10,5 @@ FindOptimalSVMParameters
 TestSVMs
 SignTestFits
 *results*.txt
+TAGS
+SignTestByGene
