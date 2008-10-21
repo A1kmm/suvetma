@@ -18,6 +18,7 @@ public:
   void setArray(uint32_t aArray);
   double getDataPoint(uint32_t aGene);
   uint32_t getNumGenes() const { return mnGenes; }
+  uint32_t getNumArrays() const { return mnArrays; }
 
 private:
   std::map<std::string, uint32_t> mArrayIndices, mGeneIndices;
@@ -122,7 +123,7 @@ public:
       (*i)->train();
   }
 
-  void trainAndSaveSVMs(const std::string& aSVMDir);
+  void trainAndSaveSVMs(const std::string& aSVMDir, bool aDontReplace = false);
 
   template<class Container> double testSVMs(const Container& aTestingArrays)
   {

@@ -29,6 +29,9 @@ ExpressionMatrixProcessor::ExpressionMatrixProcessor
     {
       std::string array;
       std::getline(af, array);
+
+      if (!af.good())
+        break;
       
       mArrayIndices.insert(std::pair<std::string, uint32_t>(array, index++));
     }
@@ -47,6 +50,9 @@ ExpressionMatrixProcessor::ExpressionMatrixProcessor
     {
       std::string gene;
       std::getline(gf, gene);
+
+      if (!gf.good())
+        break;
 
       mGeneIndices.insert(std::pair<std::string, uint32_t>(gene, index++));
     }
@@ -256,7 +262,7 @@ SupportVectorMachine::train()
 }
 
 void
-GRNModel::trainAndSaveSVMs(const std::string& aSVMDir)
+GRNModel::trainAndSaveSVMs(const std::string& aSVMDir, bool aDontReplace)
 {
   fs::path dir(aSVMDir);
   
@@ -266,6 +272,8 @@ GRNModel::trainAndSaveSVMs(const std::string& aSVMDir)
   {
     (*i)->train();
     fs::path targ(dir);
+    if (fs::is_regular(targ) && aDontReplace)
+      continue;
     targ /= (*i)->getRegulatedGeneName();
     (*i)->save(targ.string());
   }
