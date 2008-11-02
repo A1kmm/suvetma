@@ -67,6 +67,8 @@ public:
       }
     }
 
+    printf("x = %u, n = %u\n", x, n);
+
     if (x > n - x)
       x = n - x;
 
@@ -132,8 +134,8 @@ safe_svm_evaluator(GRNModel& m, GRNModel& nm, const std::list<std::string>& test
     close(pipes[1]);
 
     struct timeval tv;
-    // Give it 10 minutes (for each result, 20 total)...
-    tv.tv_sec = 600;
+    // Give it 120 seconds (for each result, 4 min total)...
+    tv.tv_sec = 240;
     tv.tv_usec = 0;
     fd_set s;
     FD_ZERO(&s);
@@ -154,7 +156,7 @@ safe_svm_evaluator(GRNModel& m, GRNModel& nm, const std::list<std::string>& test
       }
       else
       {
-        tv.tv_sec = 600;
+        tv.tv_sec = 240;
         tv.tv_usec = 0;
         FD_SET(pipes[0], &s);
         if (select(pipes[0] + 1, &s, NULL, &s, &tv) <= 0)
@@ -228,8 +230,8 @@ main(int argc, char** argv)
 {
   const unsigned int T_SIZE = 3; // size for tournament selection
   const unsigned int VEC_SIZE = 3; // Number of object variables in genotypes
-  const unsigned int POP_SIZE = 10; // Size of population
-  const unsigned int MAX_GEN = 100; // Maximum number of generation before STOP
+  const unsigned int POP_SIZE = 100; // Size of population
+  const unsigned int MAX_GEN = 1000; // Maximum number of generation before STOP
   const unsigned int MIN_GEN = 10;  // Minimum number of generation before ...
   const unsigned int STEADY_GEN = 10; // stop after STEADY_GEN gen. without improvement
   const float P_CROSS = 0.8;	// Crossover probability
@@ -360,8 +362,21 @@ main(int argc, char** argv)
   rng.reseed(SEED);
 
   EvaluateSVMFit eval(m, m2, trainingArrays, lastRun, 50, emp.getNumArrays());
-  eoUniformGenerator<double> uGen(-15.0, 15.0);
-  eoInitFixedLength<Indi> random(VEC_SIZE, uGen);
+
+  std::vector<double> minVals, maxVals;
+  // log(gamma)
+  minVals.push_back(-15);
+  maxVals.push_back(15);
+  // log(C)
+  minVals.push_back(-15);
+  maxVals.push_back(2);
+  // log(p)
+  minVals.push_back(-15);
+  maxVals.push_back(15);
+
+  eoRealVectorBounds rvb(minVals, maxVals);
+  eoRealInitBounded<Indi> random(rvb);
+
   eoPop<Indi> pop(POP_SIZE, random);
   apply<Indi>(eval, pop);
   pop.sort();
