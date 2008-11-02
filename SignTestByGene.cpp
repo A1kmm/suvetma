@@ -112,11 +112,14 @@ private:
       std::string l;
       std::getline(gl, l);
 
+      if (!gl.good())
+        break;
+
       mGenes.push_back(l);
     }
 
     // The + 1 is a workaround for a bug in the other tools due to the trailing newline.
-    mNGenes = mGenes.size() + 1;
+    mNGenes = mGenes.size();
   }
 };
 
