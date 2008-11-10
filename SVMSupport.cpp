@@ -117,7 +117,7 @@ SupportVectorMachine::SupportVectorMachine
 )
   : mEMP(aEMP), mRegulatedGene(aEMP.getIndexOfGene(aRegulatedGene)),
     mNumRegulators(aNumRegulators), mModel(NULL), mGamma(0.1), mC(0.1),
-    mp(0.1), mTestNodes(NULL), mRegulatedGeneName(aRegulatedGene)
+    mNu(0.1), mTestNodes(NULL), mRegulatedGeneName(aRegulatedGene)
 {
   mRegulatingGenes.reserve(aNumRegulators);
   mProblem.y = NULL;
@@ -239,16 +239,16 @@ SupportVectorMachine::train()
     return;
   }
 
-  mParameter.svm_type = EPSILON_SVR;
+  mParameter.svm_type = NU_SVR;
   mParameter.kernel_type = RBF;
   mParameter.degree = 3;
   mParameter.gamma = mGamma;
   mParameter.coef0 = 0;
-  mParameter.nu = 0.5;
+  mParameter.p = 0;
   mParameter.cache_size = 100;
   mParameter.C = mC;
   mParameter.eps = 1E-3;
-  mParameter.p = mp;
+  mParameter.nu = mNu;
   mParameter.shrinking = 1;
   mParameter.probability = 0;
   mParameter.nr_weight = 0;
