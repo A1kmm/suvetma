@@ -56,11 +56,11 @@ public:
   }
 
   void
-  setParameters(double aGamma, double aC, double ap)
+  setParameters(double aGamma, double aC, double aNu)
   {
     mGamma = aGamma;
     mC = aC;
-    mp = ap;
+    mNu = aNu;
   }
 
 private:
@@ -70,7 +70,7 @@ private:
   struct svm_model* mModel;
   struct svm_problem mProblem;
   struct svm_parameter mParameter;
-  double mAverage, mSum, mGamma, mC, mp;
+  double mAverage, mSum, mGamma, mC, mNu;
   uint32_t mNumFinite;
   double * mYp;
   svm_node ** mXp, *mTestNodes;
@@ -107,12 +107,12 @@ public:
     }
   }
 
-  void setSVMParameters(double aGamma, double aC, double ap)
+  void setSVMParameters(double aGamma, double aC, double aNu)
   {
     for (std::list<SupportVectorMachine*>::iterator i = mSVMs.begin();
          i != mSVMs.end();
          i++)
-      (*i)->setParameters(aGamma, aC, ap);
+      (*i)->setParameters(aGamma, aC, aNu);
   }
 
   void trainSVMs()
