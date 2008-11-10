@@ -198,9 +198,9 @@ public:
   {
     if (aIndi.invalid())
     {
-      double gamma = exp(aIndi[0]), C = exp(aIndi[1]), p = exp(aIndi[2]);
-      mM.setSVMParameters(gamma, C, p);
-      mNM.setSVMParameters(gamma, C, p);
+      double gamma = exp(aIndi[0]), C = exp(aIndi[1]), nu = exp(aIndi[2]);
+      mM.setSVMParameters(gamma, C, nu);
+      mNM.setSVMParameters(gamma, C, nu);
 
       double fitness;
       if (!mLastRun.empty())
@@ -212,7 +212,7 @@ public:
         fitness = safe_svm_evaluator(mM, mNM, mTestingSet, mNumGenes, mNumArrays);
       aIndi.fitness(fitness);
       std::cout << "SVM Result: log2 gamma (" << aIndi[0] << ") "
-                   "log2 C (" << aIndi[1] << ") log2 p (" << aIndi[2]
+                   "log2 C (" << aIndi[1] << ") log2 nu (" << aIndi[2]
                 << ") Result (" << fitness << ")"
                 << std::endl;
     }
