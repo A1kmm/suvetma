@@ -55,6 +55,13 @@ public:
 
     int32_t n = 0, x = 0;
 
+    if (p != mData + mnGenes * mnArrays * 2)
+    {
+      printf("log2pval called when there were %ld results, instead of %u, so will yield wrong results.\n",
+             (p - mData), mnGenes * mnArrays * 2);
+      assert(0);
+    }
+
     while (p1 < end)
     {
       double v1 = *p1++, v2 = *p2++;
@@ -135,7 +142,7 @@ safe_svm_evaluator(GRNModel& m, GRNModel& nm, const std::list<std::string>& test
 
     struct timeval tv;
     // Give it 120 seconds (for each result, 4 min total)...
-    tv.tv_sec = 240;
+    tv.tv_sec = 500;
     tv.tv_usec = 0;
     fd_set s;
     FD_ZERO(&s);
@@ -156,7 +163,7 @@ safe_svm_evaluator(GRNModel& m, GRNModel& nm, const std::list<std::string>& test
       }
       else
       {
-        tv.tv_sec = 240;
+        tv.tv_sec = 500;
         tv.tv_usec = 0;
         FD_SET(pipes[0], &s);
         if (select(pipes[0] + 1, &s, NULL, &s, &tv) <= 0)
@@ -198,7 +205,7 @@ public:
   {
     if (aIndi.invalid())
     {
-      double gamma = exp(aIndi[0]), C = exp(aIndi[1]), nu = exp(aIndi[2]);
+      double gamma = exp(aIndi[0]), C = exp(aIndi[1]), nu = aIndi[2];
       mM.setSVMParameters(gamma, C, nu);
       mNM.setSVMParameters(gamma, C, nu);
 
@@ -212,7 +219,7 @@ public:
         fitness = safe_svm_evaluator(mM, mNM, mTestingSet, mNumGenes, mNumArrays);
       aIndi.fitness(fitness);
       std::cout << "SVM Result: log2 gamma (" << aIndi[0] << ") "
-                   "log2 C (" << aIndi[1] << ") log2 nu (" << aIndi[2]
+                   "log2 C (" << aIndi[1] << ") nu (" << aIndi[2]
                 << ") Result (" << fitness << ")"
                 << std::endl;
     }
@@ -230,7 +237,7 @@ main(int argc, char** argv)
 {
   const unsigned int T_SIZE = 3; // size for tournament selection
   const unsigned int VEC_SIZE = 3; // Number of object variables in genotypes
-  const unsigned int POP_SIZE = 100; // Size of population
+  const unsigned int POP_SIZE = 10; // Size of population
   const unsigned int MAX_GEN = 1000; // Maximum number of generation before STOP
   const unsigned int MIN_GEN = 10;  // Minimum number of generation before ...
   const unsigned int STEADY_GEN = 10; // stop after STEADY_GEN gen. without improvement
@@ -347,8 +354,8 @@ main(int argc, char** argv)
   }
 
   ExpressionMatrixProcessor emp(matrixdir);
-  GRNModel m(model, emp, 50);
-  GRNModel m2(nullmodel, emp, 50);
+  GRNModel m(model, emp, 30);
+  GRNModel m2(nullmodel, emp, 30);
 
   std::list<std::string> trainingArrays, testingArrays;
   m.loadArraySet(trainingset, trainingArrays);
@@ -361,7 +368,7 @@ main(int argc, char** argv)
   // We seed it just so we can restart if need be.
   rng.reseed(SEED);
 
-  EvaluateSVMFit eval(m, m2, trainingArrays, lastRun, 50, emp.getNumArrays());
+  EvaluateSVMFit eval(m, m2, trainingArrays, lastRun, 30, testingArrays.size());
 
   std::vector<double> minVals, maxVals;
   // log(gamma)
@@ -370,9 +377,9 @@ main(int argc, char** argv)
   // log(C)
   minVals.push_back(-15);
   maxVals.push_back(2);
-  // log(p)
-  minVals.push_back(-15);
-  maxVals.push_back(15);
+  // nu
+  minVals.push_back(0);
+  maxVals.push_back(1);
 
   eoRealVectorBounds rvb(minVals, maxVals);
   eoRealInitBounded<Indi> random(rvb);

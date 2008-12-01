@@ -11,7 +11,7 @@ main(int argc, char** argv)
 {
   po::options_description desc;
   std::string matrixdir, model, svmdir, trainingset;
-  double loggamma, logC, lognu;
+  double loggamma, logC, nu;
   bool dontReplace;
 
   desc.add_options()
@@ -27,7 +27,7 @@ main(int argc, char** argv)
      "The value of the RBF parameter gamma, as a base-e logarithm of the value")
     ("C", po::value<double>(&logC),
      "The value of the SVM parameter C, as a base-e logarithm of the value")
-    ("nu", po::value<double>(&lognu),
+    ("nu", po::value<double>(&nu),
      "The value of the SVM parameter nu, as a base-e logarithm of the value")
     ("dont-replace", "Indicates that existing SVMs shouldn't be replaced")
     ;
@@ -101,7 +101,7 @@ main(int argc, char** argv)
 
   std::list<std::string> trainingArrays;
   m.loadArraySet(trainingset, trainingArrays);
-  m.setSVMParameters(exp(loggamma), exp(logC), exp(lognu));
+  m.setSVMParameters(exp(loggamma), exp(logC), nu);
   m.loadSVMTrainingData(trainingArrays);
   m.trainAndSaveSVMs(svmdir, dontReplace);
   

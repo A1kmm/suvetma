@@ -367,7 +367,10 @@ GRNModel::GRNModel(const std::string& aModel,
     std::getline(m, l);
     boost::smatch res;
     if (!boost::regex_match(l, res, edgeline))
+    {
+      aGeneLimit++;
       continue;
+    }
 
     uint32_t g(strtoul(res[1].str().c_str(), NULL, 10));
     std::string targGene(mHGNCByVertex[g]);
@@ -386,7 +389,10 @@ GRNModel::GRNModel(const std::string& aModel,
     }
     
     if (targGene == "")
+    {
+      aGeneLimit++;
       continue;
+    }
 
     SupportVectorMachine* svm(new SupportVectorMachine(aEMP, targGene,
                                                        regulators.size()));
